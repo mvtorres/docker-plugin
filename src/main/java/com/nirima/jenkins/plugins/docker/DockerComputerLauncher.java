@@ -1,20 +1,19 @@
 package com.nirima.jenkins.plugins.docker;
 
 
-import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
-import com.google.common.base.Preconditions;
-import com.nirima.docker.client.model.ContainerInspectResponse;
-import com.nirima.jenkins.plugins.docker.utils.RetryingComputerLauncher;
 import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.DelegatingComputerLauncher;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-
-
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
+import com.google.common.base.Preconditions;
+import com.nirima.docker.client.model.ContainerInspectResponse;
+import com.nirima.jenkins.plugins.docker.utils.WaitForSSHComputerLauncher;
 
 
 /**
@@ -31,7 +30,7 @@ public class DockerComputerLauncher extends DelegatingComputerLauncher {
 
     private static ComputerLauncher makeLauncher(DockerTemplate template, ContainerInspectResponse containerInspectResponse) {
         SSHLauncher sshLauncher = getSSHLauncher(containerInspectResponse, template);
-        return new RetryingComputerLauncher(sshLauncher);
+        return new WaitForSSHComputerLauncher(sshLauncher);
     }
 
     private static SSHLauncher getSSHLauncher(ContainerInspectResponse detail, DockerTemplate template)   {
@@ -45,7 +44,6 @@ public class DockerComputerLauncher extends DelegatingComputerLauncher {
             String host = hostUrl.getHost();
 
             LOGGER.log(Level.INFO, "Creating slave SSH launcher for " + host + ":" + port);
-
             StandardUsernameCredentials credentials = SSHLauncher.lookupSystemCredentials(template.credentialsId);
 
             return new SSHLauncher(host, port, credentials,  template.jvmOptions , template.javaPath, template.prefixStartSlaveCmd, template.suffixStartSlaveCmd, 60);
